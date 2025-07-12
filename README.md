@@ -13,9 +13,9 @@ TikZ图表渲染MCP服务器，将TikZ代码转换为图片。
 ### 必需依赖
 
 1. **Python 3.10+**
-2. **TeX Live** (包含pdflatex)
+2. **TeX Live** (包含xelatex)
 3. **ImageMagick** (包含convert命令)
-4. **MCP库**: `pip install mcp`
+4. **MCP库**: 在虚拟环境中安装
 
 ### macOS安装
 
@@ -26,7 +26,9 @@ brew install --cask mactex
 # 安装ImageMagick  
 brew install imagemagick
 
-# 安装MCP库
+# 创建虚拟环境并安装MCP库
+python3 -m venv venv
+source venv/bin/activate
 pip install mcp
 ```
 
@@ -40,9 +42,9 @@ pip install mcp
 {
   "mcpServers": {
     "tikz-renderer": {
-      "name": "TikZ Renderer",
+      "name": "TikZ Renderer", 
       "type": "STDIO",
-      "command": "/path/to/python3",
+      "command": "/path/to/tikz-mcp-server/venv/bin/python",
       "args": ["/path/to/tikz-mcp-server/tikz_mcp_server.py"],
       "env": {},
       "description": "TikZ diagram renderer"
@@ -51,7 +53,6 @@ pip install mcp
 }
 ```
 
-**注意**: 请将`/path/to/tikz-mcp-server/tikz_mcp_server.py`替换为实际的文件路径。
 
 ## 许可证
 

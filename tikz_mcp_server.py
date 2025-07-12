@@ -26,9 +26,9 @@ class TikZMCPServer:
     
     def compile_tikz_to_image(self, tikz_code: str) -> str:
         try:
-            subprocess.run(["pdflatex", "--version"], check=True, capture_output=True)
+            subprocess.run(["xelatex", "--version"], check=True, capture_output=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
-            raise RuntimeError("pdflatex not found. Please install TeX Live or MiKTeX.")
+            raise RuntimeError("xelatex not found. Please install TeX Live or MiKTeX.")
         
         try:
             subprocess.run(["convert", "--version"], check=True, capture_output=True)
@@ -42,6 +42,8 @@ class TikZMCPServer:
                 latex_content = tikz_code
             else:
                 latex_content = f"""\\documentclass[border=2pt]{{standalone}}
+\\usepackage{{xeCJK}}
+\\usepackage{{fontspec}}
 \\usepackage{{tikz}}
 \\usepackage{{pgfplots}}
 \\usepackage{{amsmath}}
@@ -59,7 +61,7 @@ class TikZMCPServer:
             
             try:
                 result = subprocess.run([
-                    "pdflatex", 
+                    "xelatex", 
                     "-interaction=nonstopmode",
                     "-output-directory", temp_dir,
                     str(tex_file)
@@ -71,7 +73,6 @@ class TikZMCPServer:
                     log_content = log_file.read_text(encoding='utf-8', errors='ignore')
                     lines = log_content.split('\n')
                     
-                    # Extract relevant error information
                     error_section = False
                     error_lines = []
                     context_lines = []
@@ -79,17 +80,14 @@ class TikZMCPServer:
                     for i, line in enumerate(lines):
                         line_clean = line.strip()
                         
-                        # Start collecting when we see an error indicator
                         if any(keyword in line.lower() for keyword in ['! ', 'error:', 'undefined', 'missing']):
                             error_section = True
                             error_lines.append(line_clean)
-                            # Add some context lines before the error
                             for j in range(max(0, i-2), i):
                                 if lines[j].strip() and lines[j].strip() not in context_lines:
                                     context_lines.append(lines[j].strip())
                             continue
                         
-                        # Continue collecting related lines
                         if error_section:
                             if line_clean:
                                 if line.startswith('l.') or 'line' in line.lower():
@@ -101,15 +99,13 @@ class TikZMCPServer:
                                 elif len(error_lines) < 10:
                                     error_lines.append(line_clean)
                             else:
-                                # Empty line often marks end of error section
                                 if len(error_lines) > 0:
                                     break
                     
                     if context_lines or error_lines:
                         all_lines = context_lines + ['--- Error Details ---'] + error_lines
-                        error_details = '\n'.join(all_lines[:20])  # Limit to 20 lines
+                        error_details = '\n'.join(all_lines[:20]) 
                     else:
-                        # Fallback: show last part of log that might contain errors
                         last_lines = [line for line in lines[-50:] if line.strip()]
                         error_details = '\n'.join(last_lines[-15:])
                         
